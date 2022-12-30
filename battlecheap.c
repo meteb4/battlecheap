@@ -70,7 +70,9 @@ int main()
     int i = 0;
     while (!peaceQuestionMark(crewPlayer, crewBot))
     {
+
         showTable(grid_player, grid_ATTACK_player);
+        showGrid(grid_bot);
         printf("Tour du joueur: \n");
         requestTorpedo(grid_ATTACK_player, grid_bot);
         if (
@@ -82,6 +84,7 @@ int main()
         if (fatalTorpedo(grid_ATTACK_bot, grid_player, crewPlayer))
             printf("Un de vos navires vient d'être détruit..\n");
     }
+    printf("Félicitations capitaine, vous avez coulé tous les bateaux !\nRetour à la base.");
     return 0;
 }
 
@@ -374,7 +377,7 @@ void requestTorpedo(char grid_ATTACK_1[], char grid_2[])
     char x;
     int y;
     fflush(stdin);
-    if (scanf("(%c,%d)", &x, &y) != 2)
+    if (scanf("%c,%d", &x, &y) != 2)
     {
         fflush(stdin);
         printf("Mauvaise coordonnée chef.\n");
@@ -504,14 +507,20 @@ int fatalTorpedo(char grid_ATTACK_1[], char grid_2[], ship list[]) // TODO:ajout
 
 int peaceQuestionMark(ship list_1[], ship list_2[])
 {
+    int a, b = 1;
     for (int i = 0; i < 5; i += 1)
     {
-        if (list_1[i].finito == 0 || list_2[i].finito == 0)
+        if (a && list_1[i].finito == 0)
         {
-            return 0;
+            a = 0;
+        }
+        if (b && list_2[i].finito == 0)
+        {
+            b = 0;
         }
     }
-    return 1;
+    printf("%d\n", (a + b) / 2);
+    return a + b;
 }
 
 void processing()
