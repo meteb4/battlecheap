@@ -37,7 +37,8 @@ const int lines_len = (len + 1) * 4;
 
 void bsh();                                                                 // battlecheap shell
 void rules();                                                               // les regles
-void play();                                                                // le 'jeu'
+void play(int set);                                                         // le 'jeu'
+int startsWith(char a[], char b[]);                                         // checks if string a begins with string b
 char *makeGrid();                                                           // créer un tableau
 void offset();                                                              // affiche un espace d elongeur off slent
 void printl(int n);                                                         // affiche une ligne de longueue 44
@@ -72,29 +73,34 @@ void bsh()
         printf("%c", str[i]);
     }
     // Saluer le joeur
-    printf("\nbsh>Voici les differentes commandes disponibles : \n");
-    printf("     - \033[1mrules\033[0m: ennonce les regles\n");
-    printf("     - \033[1mships\033[0m: Fait une liste des bateaux\n");
-    printf("     - \033[1mhelp\033[0m: Fait une liste des bateaux\n");
-    printf("     - \033[1mplay\033[0m: commence la partie\n");
-    printf("     - \033[1mexit\033[0m: arrete la partie\n");
     char tmp[10] = {' '};
     int finito = 0;
+    int set = 0;
     while (!finito)
     {
+        fflush(stdin);
         printf("bsh>");
-        if (scanf("%s", tmp) == 1)
+        if (scanf("%[^\n]", tmp) == 1)
         {
             if (strcmp(tmp, "rules") == 0)
             {
                 rules();
             }
+            else if (strcmp(tmp, "help") == 0)
+            {
+                printf("\nbsh>Voici les differentes commandes disponibles : \n");
+                printf("     - \033[1mrules\033[0m: Ennonce les regles\n");
+                printf("     - \033[1mhow\033[0m: Ennonce comment jouer\n");
+                printf("     - \033[1mships\033[0m: Fait une liste des bateaux\n");
+                printf("     - \033[1mset\033[0m: Les navires sont deja placé au debut si vrai, sinon non.\n");
+                printf("     - \033[1mplay\033[0m: Commence la partie\n");
+                printf("     - \033[1mexit\033[0m: Arrete la partie\n");
+            }
             else if (strcmp(tmp, "ships") == 0)
             {
-                // Faire la liste des bateaux
-                // listShips(crewBot);
+                showShips(crewPlayer);
             }
-            else if (strcmp(tmp, "help") == 0)
+            else if (strcmp(tmp, "how") == 0)
             {
                 printf("Voici les differents controles\n");
                 printf("  - Quand c'est votre tour, il suffit, pour attaquer, d'entrer une coordonnée.\n    Format: [A:J],[1:10]. Ne pas oublier la virgule.\n    Exemple: bsh>B,5\n");
@@ -102,7 +108,24 @@ void bsh()
             else if (strcmp(tmp, "play") == 0)
             {
                 // Renvoyer vers la fonction jouer
-                play();
+                play(set);
+            }
+            else if (tmp[0] == 's' && tmp[1] == 'e' && tmp[2] == 't' && tmp[3] == ' ')
+            {
+                if (tmp[4] == '1')
+                {
+                    set = 1;
+                    printf("set: %d\n", set);
+                }
+                else if (tmp[4] == '0')
+                {
+                    set = 0;
+                    printf("set: %d\n", set);
+                }
+                else
+                {
+                    printf("\033[1mERROR\033[0m: wrong call for function \033[1mset %%d\033[0m\n");
+                }
             }
             else if (strcmp(tmp, "exit") == 0)
             {
@@ -111,8 +134,7 @@ void bsh()
             }
             else
             {
-                printf("  Command %s wasn't found", tmp);
-                fflush(stdin);
+                printf("  Command %s wasn't found. Try \033[1mhelp\033[0m.\n", tmp);
             }
         }
     }
@@ -128,7 +150,7 @@ void rules()
     printf("--- --- --- --- --- --- --- --- --- ---\n");
 }
 
-void play()
+void play(int set)
 {
     // Créer les tableaux
     char *grid_player = makeGrid();
@@ -137,9 +159,16 @@ void play()
     char *grid_ATTACK_bot = makeGrid();
 
     // initialiser les tableaux
-    initGridBot(grid_player, crewPlayer);
-    initGridBot(grid_bot, crewBot);
+    if (set)
+    {
+        initGridBot(grid_player, crewPlayer);
+    }
+    else
+    {
+        initGridPlayer(grid_player, crewPlayer);
+    }
 
+    initGridBot(grid_bot, crewBot);
     // On continue de jouer tant que tout les navires d'au moins un joueur ne soient pas coulés
     // A chaque debut de tour, on affiche les tableaux
     // Si le joueur touche, il peut rejouer, sinon c'est au tour du bot, et ainsi de suite
@@ -199,6 +228,18 @@ void play()
     {
         printf("\033[1mC'est vous, le joueur, le GRAND perdant de cette bataille navale ..\033[0m\n");
     }
+}
+
+int startsWith(char a[], char b[])
+{
+    for (int i = 0; i < sizeof(*b) / sizeof(char); i += 1)
+    {
+        if (a[i] != b[i])
+        {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 char *makeGrid()
@@ -339,15 +380,23 @@ char BOOLCHAR(int bool)
 void showShips(ship list[])
 {
     printf("CARACTERISTIQUES DES NAVIRES : \n");
-    printl(sizeof("| index | longueur | placé |") / sizeof(char));
-    printf("\n| index | longueur | placé   |");
+    printf("+----+--------------------------+--------+-------+\n");
+    printf("| \033[1mID\033[0m | \033[1mNavire\033[0m                   | \033[1mTaille\033[0m | \033[1mPlacé\033[0m |\n");
     for (int i = 0; i < 5; i += 1)
-    {
-        printf("\n");
-        printl(sizeof("| index | longueur | placé |") / sizeof(char));
-        printf("\n");
-        printf("| %d     | %d        | %c       |", i, list[i].length, BOOLCHAR(list[i].isPlaced));
+    { // 5 etant le nombre de navires
+        printf("+----+--------------------------+--------+-------+\n");
+        printf("| %d  | %-24s | %d      | ", i, crewPlayer[i].name, crewPlayer[i].length);
+        if (crewPlayer[i].isPlaced)
+        {
+            printf("Y");
+        }
+        else
+        {
+            printf("N");
+        }
+        printf("     |\n");
     }
+    printf("+----+--------------------------+--------+-------+\n");
 }
 
 void initGridPlayer(char tab[], ship list[])
